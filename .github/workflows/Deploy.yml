@@ -15,5 +15,5 @@ jobs:
 
       - name: Publish Module to PowerShell Gallery
         run: |
-          Publish-Module -Path ./RancherPS -NuGetApiKey ${{ secrets.PSGALLERY }}
+          Publish-Module -Path ./RancherPS -NuGetApiKey ${{ secrets.PS_GALLERY_KEY }}
         shell: pwsh
