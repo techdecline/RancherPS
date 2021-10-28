@@ -13,9 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2.3.1
 
-      - name: Publish Module to PowerShell Gallery
-        uses: pcgeek86/publish-powershell-module-action@v19
-        id: publish-module
-        with:
-          modulePath: RancherPS
-          NuGetApiKey: ${{ secrets.PS_GALLERY_KEY }}
+      run: |
+          Publish-Module -Path ./RancherPS -NuGetApiKey ${{ secrets.PSGALLERY }}
+        shell: pwsh
