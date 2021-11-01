@@ -1,39 +1,51 @@
 function Start-RancherNode {
     [CmdletBinding(DefaultParameterSetName="Default")]
     param (
-        [Parameter(Mandatory)]
-        [String]$Endpoint,
-
-        [Parameter(Mandatory)]
-        [securestring]$Token,
+        [Parameter(Mandatory=$false)]
+        [String]$Endpoint = $env:RancherEndpoint,
 
         [Parameter(Mandatory=$false)]
-        [switch]$IgnoreSSLWarning,
+        [securestring]$Token = (ConvertTo-SecureString -AsPlainText -Force $Env:RancherToken),
+
+        [Parameter(Mandatory=$false)]
+        [switch]$IgnoreSSLWarning = $env:RancherIgnoreSSLWarning,
 
         [Parameter(Mandatory)]
         [string]$NodeId
     )
       
     process {
-        $paramsNode = @{
+        $paramGet = @{
             EndPoint = $Endpoint
             Token = $Token
             IgnoreSSLWarning = $true
-            Method = "Post"
-            Action = "uncordon"
-            ResourceClass = "nodes"
-            resourceId = $NodeId
-            Property = @{
-                deleteLocalData = if ($DeleteLocalData) {"true"} else {"false"}
-                force = if ($Force) {"true"} else {"false"}
-                gracePeriod = $GracePeriod
-                ignoreDaemonSets = if ($IgnoreDaemonSets) {"true"} else {"false"}
-                timeout = $Timeout
-            }
+            NodeId = $NodeId
         }
-        
-        Write-Verbose "Uncordorning node: $NodeId"
-        $result = Invoke-RancherMethod @paramsNode
-        return $result
+        $currentState = (Get-RancherNode @paramGet).state
+        Write-Verbose "Current State of $NodeId is: $currentState"
+        if (@("cordoned","drained") -contains $currentState ) {
+            $paramsNode = @{
+                EndPoint = $Endpoint
+                Token = $Token
+                IgnoreSSLWarning = $true
+                Method = "Post"
+                Action = "uncordon"
+                ResourceClass = "nodes"
+                resourceId = $NodeId
+            }
+    
+            Write-Verbose "Uncordorning node: $NodeId"
+            try {
+                $null = Invoke-RancherMethod @paramsNode
+                return
+            }
+            catch {
+                throw "Unable to uncordon node: $($error[0].exception.message)"
+            }
+        } 
+        else {
+            # Nothing to do
+            return
+        }      
     }
 }

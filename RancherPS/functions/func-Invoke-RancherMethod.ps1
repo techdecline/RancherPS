@@ -1,14 +1,14 @@
 function Invoke-RancherMethod {
     [CmdletBinding(DefaultParameterSetName="Default")]
     param (
-        [Parameter(Mandatory)]
-        [String]$Endpoint,
-
-        [Parameter(Mandatory)]
-        [securestring]$Token,
+        [Parameter(Mandatory=$false)]
+        [String]$Endpoint = $env:RancherEndpoint,
 
         [Parameter(Mandatory=$false)]
-        [switch]$IgnoreSSLWarning,
+        [securestring]$Token = (ConvertTo-SecureString -AsPlainText -Force $Env:RancherToken),
+
+        [Parameter(Mandatory=$false)]
+        [switch]$IgnoreSSLWarning = $env:RancherIgnoreSSLWarning,
 
         [Parameter(Mandatory=$false)]
         [ValidateSet("Get","Post")]

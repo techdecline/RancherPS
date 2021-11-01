@@ -1,14 +1,14 @@
 function Stop-RancherNode {
     [CmdletBinding(DefaultParameterSetName="Default")]
     param (
-        [Parameter(Mandatory)]
-        [String]$Endpoint,
-
-        [Parameter(Mandatory)]
-        [securestring]$Token,
+        [Parameter(Mandatory=$false)]
+        [String]$Endpoint = $env:RancherEndpoint,
 
         [Parameter(Mandatory=$false)]
-        [switch]$IgnoreSSLWarning,
+        [securestring]$Token = (ConvertTo-SecureString -AsPlainText -Force $Env:RancherToken),
+
+        [Parameter(Mandatory=$false)]
+        [switch]$IgnoreSSLWarning = $env:RancherIgnoreSSLWarning,
 
         [Parameter(Mandatory)]
         [string]$NodeId,
@@ -34,6 +34,14 @@ function Stop-RancherNode {
     )
       
     process {
+        $paramGet = @{
+            EndPoint = $Endpoint
+            Token = $Token
+            IgnoreSSLWarning = $true
+            NodeId = $NodeId
+        }
+        $currentState = (Get-RancherNode @paramGet).state
+
         $paramsNode = @{
             EndPoint = $Endpoint
             Token = $Token
@@ -53,9 +61,16 @@ function Stop-RancherNode {
                 timeout = $Timeout
             })
         }
+        else {
+            # Only run when Mode is cordon
+            If ($currentState -eq "cordoned" ) {
+                Write-Verbose "Node $NodeId is already cordoned"
+                return
+            }
+        }
 
         Write-Verbose "Stopping node: $NodeId"
-        $result = Invoke-RancherMethod @paramsNode
-        return $result
+        $null = Invoke-RancherMethod @paramsNode
+        return
     }
 }

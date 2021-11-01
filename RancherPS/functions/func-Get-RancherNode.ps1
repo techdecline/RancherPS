@@ -1,20 +1,23 @@
 function Get-RancherNode {
-    [CmdletBinding(DefaultParameterSetName="Default")]
+    [CmdletBinding(DefaultParameterSetName="ByNodeName")]
     param (
-        [Parameter(Mandatory)]
-        [String]$Endpoint,
-
-        [Parameter(Mandatory)]
-        [securestring]$Token,
+        [Parameter(Mandatory=$false)]
+        [String]$Endpoint = $env:RancherEndpoint,
 
         [Parameter(Mandatory=$false)]
-        [switch]$IgnoreSSLWarning,
+        [securestring]$Token = (ConvertTo-SecureString -AsPlainText -Force $Env:RancherToken),
 
         [Parameter(Mandatory=$false)]
+        [switch]$IgnoreSSLWarning = $env:RancherIgnoreSSLWarning,
+
+        [Parameter(Mandatory=$false,ParameterSetName="ByNodeName")]
         [string]$ClusterId,
 
-        [Parameter(Mandatory=$false)]
-        [string]$NodeName
+        [Parameter(Mandatory=$false,ParameterSetName="ByNodeName")]
+        [string]$NodeName,
+
+        [Parameter(Mandatory,ParameterSetName="ByNodeId")]
+        [string]$NodeId
     )
       
     process {
@@ -27,16 +30,23 @@ function Get-RancherNode {
             ResourceClass = "node"
         }
         
-        if ($ClusterId) {
-            $filter.Add("clusterId",$ClusterId)
-        }
+        switch ($PSCmdlet.ParameterSetName) {
+            "ByNodeName" {
+                if ($ClusterId) {
+                    $filter.Add("clusterId",$ClusterId)
+                }
+                
+                if($NodeName) {
+                    $filter.Add("name",$NodeName)
+                }
         
-        if($NodeName) {
-            $filter.Add("name",$NodeName)
-        }
-
-        if ($filter.Count -gt 0) {
-            $paramsNode.Add("Filter",$filter)
+                if ($filter.Count -gt 0) {
+                    $paramsNode.Add("Filter",$filter)
+                }
+            }
+            "ByNodeId" {
+                $paramsNode.Add("ResourceId",$NodeId)
+            }
         }
         $node = Invoke-RancherMethod @paramsNode
         return $node
