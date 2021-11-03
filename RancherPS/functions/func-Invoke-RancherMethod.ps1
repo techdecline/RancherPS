@@ -18,7 +18,7 @@ function Invoke-RancherMethod {
         [String]$ResourceClass,
 
         [Parameter(Mandatory=$false)]
-        [ValidateSet("cordon","drain","uncordon")]
+        [ValidateSet("cordon","drain","uncordon","generateKubeconfig")]
         [String]$Action,
 
         [Parameter(Mandatory=$false)]
@@ -134,6 +134,11 @@ function Invoke-RancherMethod {
             "Post" {
                 try {
                     $response = Invoke-RestMethod @restParams
+                    switch ($action) {
+                        "generateKubeconfig" {
+                            return $response
+                        }
+                    }
                     if ($response -ne "null") {
                         return $true
                     }
